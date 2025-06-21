@@ -1,0 +1,63 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Member index{% endblock %}
+
+{% block body %}
+    <h1>Member index</h1>
+
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Id</th>
+                <th>FirstName</th>
+                <th>LastName</th>
+                <th>Tel</th>
+                <th>Quartier</th>
+                <th>Nationalite</th>
+                <th>CreatedAt</th>
+                <th>IsMember</th>
+                <th>MemberJoinedDate</th>
+                <th>IsBaptized</th>
+                <th>BaptismDate</th>
+                <th>HasTransport</th>
+                <th>TransportDate</th>
+                <th>IsInHomeCell</th>
+                <th>HomeCellJoinDate</th>
+                <th>Observations</th>
+                <th>actions</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for member in members %}
+            <tr>
+                <td>{{ member.id }}</td>
+                <td>{{ member.firstName }}</td>
+                <td>{{ member.lastName }}</td>
+                <td>{{ member.tel }}</td>
+                <td>{{ member.quartier }}</td>
+                <td>{{ member.nationalite }}</td>
+                <td>{{ member.createdAt ? member.createdAt|date('Y-m-d H:i:s') : '' }}</td>
+                <td>{{ member.isMember ? 'Yes' : 'No' }}</td>
+                <td>{{ member.memberJoinedDate ? member.memberJoinedDate|date('Y-m-d') : '' }}</td>
+                <td>{{ member.isBaptized ? 'Yes' : 'No' }}</td>
+                <td>{{ member.BaptismDate ? member.BaptismDate|date('Y-m-d') : '' }}</td>
+                <td>{{ member.hasTransport ? 'Yes' : 'No' }}</td>
+                <td>{{ member.transportDate ? member.transportDate|date('Y-m-d') : '' }}</td>
+                <td>{{ member.isInHomeCell ? 'Yes' : 'No' }}</td>
+                <td>{{ member.homeCellJoinDate ? member.homeCellJoinDate|date('Y-m-d') : '' }}</td>
+                <td>{{ member.observations }}</td>
+                <td>
+                    <a href="{{ path('app_member_show', {'id': member.id}) }}">show</a>
+                    <a href="{{ path('app_member_edit', {'id': member.id}) }}">edit</a>
+                </td>
+            </tr>
+        {% else %}
+            <tr>
+                <td colspan="17">no records found</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+
+    <a href="{{ path('app_member_new') }}">Create new</a>
+{% endblock %}

@@ -1,0 +1,137 @@
+  //Approche 1
+        /* $membresNormalizer = $normalizer->normalize($memberList);
+    
+        $json=json_encode($membresNormalizer); */
+        /*   return new Response($json, 200, [
+            "Content-Type"=>"application/json",
+          ]); */
+        
+        //$json=$serializer->serialize($member->findAll(),'json');
+        //return new JsonResponse($json, Response::HTTP_OK, [], true);
+        
+        //dd($json, $memberList);
+        
+       /*  return $this->json([
+            'message' => 'Welcome to your new controller!',
+            'path' => 'src/Controller/MembreController.php',
+        ]); */
+
+
+ #[Route('/api/membres/{id}', name: 'app_membre_show', methods: ['GET'])]
+    public function show(int $id, MemberRepository $memberRepository)
+    {
+        $membre = $memberRepository->find($id);
+
+        if ($membre) {
+            return $this->json($memberRepository->find($id), Response::HTTP_OK, []);
+        
+        }
+        return $this->json(null, Response::HTTP_NOT_FOUND);
+    }
+
+
+
+
+
+     /**
+     * @return Collection<int, Member>
+     */
+    public function getMembers(): Collection
+    {
+        return $this->members;
+    }
+
+    public function addMember(Member $member): static
+    {
+        if (!$this->members->contains($member)) {
+            $this->members->add($member);
+            $member->setAdmin($this);
+        }
+
+        return $this;
+    }
+
+    public function removeMember(Member $member): static
+    {
+        if ($this->members->removeElement($member)) {
+            // set the owning side to null (unless already changed)
+            if ($member->getAdmin() === $this) {
+                $member->setAdmin(null);
+            }
+        }
+
+        return $this;
+    }
+
+
+
+
+     /*  public function getManager(): ?Manager
+    {
+        return $this->manager;
+    }
+
+    public function setManager(?Manager $manager): static
+    {
+        $this->manager = $manager;
+
+        return $this;
+    }
+
+    public function getAdmin(): ?User
+    {
+        return $this->admin;
+    }
+
+    public function setAdmin(?User $admin): static
+    {
+        $this->admin = $admin;
+
+        return $this;
+    } */
+
+
+
+
+     /* #[ORM\ManyToOne(inversedBy: 'members')]
+    private ?Manager $manager = null;
+
+    #[ORM\ManyToOne(inversedBy: 'members')]
+    private ?User $admin = null; */
+
+
+
+
+
+        
+     /**
+     * Cette méthode permet de récupérer l'ensemble des membres.
+     *
+     * @OA\Response(
+     *     response=200,
+     *     description="Retourne la liste des livres",
+     *     @OA\JsonContent(
+     *        type="array",
+     *        @OA\Items(ref=@Model(type=Member::class, groups={"getMembers"}))
+     *     )
+     * )
+     * @OA\Parameter(
+     *     name="page",
+     *     in="query",
+     *     description="La page que l'on veut récupérer",
+     *     @OA\Schema(type="int")
+     * )
+     *
+     * @OA\Parameter(
+     *     name="limit",
+     *     in="query",
+     *     description="Le nombre d'éléments que l'on veut récupérer",
+     *     @OA\Schema(type="int")
+     * )
+     * @OA\Tag(name="Membres")
+     *
+     * @param MemberRepository $memberRepository
+     * @param SerializerInterface $serializer
+     * @param Request $request
+     * @return JsonResponse
+     */
