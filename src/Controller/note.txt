@@ -135,3 +135,69 @@
      * @param Request $request
      * @return JsonResponse
      */
+
+
+
+     public function getGlobalStats(MemberRepository $memberRepository): JsonResponse
+    {
+        $currentYear = (int) date('Y');
+        $currentMonth = (int) date('m');
+        $globalStats = $memberRepository->getStats(null,null);
+
+        return $this->json([
+            'month' => $memberRepository->getStats($currentYear, $currentMonth),
+            'year' => $memberRepository->getStats($currentYear, null),
+            'global' => $memberRepository->getStats(null, null),
+        ],Response::HTTP_OK,[]);
+    }
+
+
+
+
+
+
+
+
+
+
+
+    public function updateProfile(
+    Request $request,
+    User $currentProfile,
+    ValidatorInterface $validator,
+    EntityManagerInterface $em,
+    SerializerInterface $serializer): JsonResponse {
+
+    /* $json = $request->getContent();
+    $context = DeserializationContext::create(); 
+    $context->setAttribute(ExistingObjectConstructor::ATTRIBUTE, $currentProfile);
+    $serializer->deserialize($json, User::class, 'json', $context); */    
+
+   
+    // Traitement de l'image
+    $file = $request->files->get('image');
+    if ($file) {
+        $filename = uniqid() . '.' . $file->getClientOriginalExtension();
+        $file->move($this->getParameter('photo_profil'), $filename);
+        $currentProfile->setProfilePhoto($filename);
+    }
+
+    // Validation
+    $errors = $validator->validate($currentProfile);
+    if (count($errors) > 0) {
+        return new JsonResponse(
+            $serializer->serialize($errors, 'json'),
+            JsonResponse::HTTP_BAD_REQUEST,
+            [],
+            true
+        );
+    }
+
+    $em->persist($currentProfile);
+    $em->flush();
+
+    $context = SerializationContext::create()->setGroups(['getMembers']); // ou ton groupe à toi
+    $json = $serializer->serialize($currentProfile, 'json', $context);
+
+    return new JsonResponse($json, Response::HTTP_OK, [], true);
+}

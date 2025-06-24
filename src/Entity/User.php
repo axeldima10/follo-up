@@ -13,6 +13,7 @@ use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 use Symfony\Component\Serializer\Annotation\Groups;
 use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
+use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: UserRepository::class)]
 #[ORM\UniqueConstraint(name: 'UNIQ_IDENTIFIER_EMAIL', fields: ['email'])]
@@ -55,11 +56,16 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     #[ORM\Column(length: 255)]
     #[Groups(["getMembers"])]
+    #[Assert\NotBlank(message: "Le prénom est obligatoire")]
     protected ?string $firstName = null;
 
     #[ORM\Column(length: 255)]
     #[Groups(["getMembers"])]
+    #[Assert\NotBlank(message: "Le nom est obligatoire")]
     protected ?string $lastName = null;
+
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $profilePhoto = null;
 
     /**
      * @var Collection<int, Manager>
@@ -299,5 +305,17 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         $this->isVerified = $isVerified;
 
         return $this;
+    }
+
+    public function getProfilePhoto(): ?string
+    {
+       return $this->profilePhoto;
+    }
+
+    public function setProfilePhoto(?string $profilePhoto): static
+    {
+       $this->profilePhoto = $profilePhoto;
+
+       return $this;
     }
 }

@@ -10,6 +10,7 @@ use App\Repository\MemberRepository;
 use JMS\Serializer\Annotation\Groups;
 use Hateoas\Configuration\Annotation as Hateoas;
 use Symfony\Component\Validator\Constraints as Assert;
+use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 
 
 
@@ -46,6 +47,10 @@ use Symfony\Component\Validator\Constraints as Assert;
  *
  */
 #[ORM\Entity(repositoryClass: MemberRepository::class)]
+#[UniqueEntity(
+    fields: ['firstName', 'lastName', 'tel'],
+    message: "Ce membre existe déjà."
+)]
 class Member
 {
     #[ORM\Id]
@@ -139,8 +144,6 @@ class Member
     #[Groups(["getMembers"])]
     private ?User $createdBy = null;
 
-    #[ORM\Column(length: 255, nullable: true)]
-    private ?string $profilePhoto = null;
 
 
     public function __construct()
@@ -345,15 +348,4 @@ class Member
        return $this;
    }
 
-   public function getProfilePhoto(): ?string
-   {
-       return $this->profilePhoto;
-   }
-
-   public function setProfilePhoto(?string $profilePhoto): static
-   {
-       $this->profilePhoto = $profilePhoto;
-
-       return $this;
-   }
 }

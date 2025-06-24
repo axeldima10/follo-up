@@ -2,8 +2,7 @@
 
 namespace App\Controller;
 
-
-use DateTime;
+use App\Entity\User;
 use App\Entity\Member;
 use OpenApi\Attributes as OA;
 use App\Repository\MemberRepository;
@@ -11,28 +10,25 @@ use JMS\Serializer\SerializerInterface;
 use Doctrine\ORM\EntityManagerInterface;
 use JMS\Serializer\SerializationContext;
 use Nelmio\ApiDocBundle\Attribute\Model;
-
 use JMS\Serializer\DeserializationContext;
 use App\Serializer\ExistingObjectConstructor;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-
-
-
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\HttpFoundation\JsonResponse;
-
 use Symfony\Component\ExpressionLanguage\Expression;
-use Symfony\Component\Security\Http\Attribute\IsGranted;
 //use Nelmio\ApiDocBundle\Attribute\Model as AttributeModel;
-use OpenApi\Examples\Specs\UsingLinks\Annotations\Repository;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\Security\Core\Security;
 
 final class MembreController extends AbstractController
 {
     
-        #[OA\Get(
+        
+    
+    #[OA\Get(
         path: '/api/membres',
         summary: 'Liste des membres',
         tags: ['Membres'],
@@ -85,7 +81,9 @@ final class MembreController extends AbstractController
         
     }
 
-   
+
+
+    //SHOW DETAILS MEMBER
     #[OA\Get(
         path :"/api/membres/{id}",
         summary: 'Voir le détail des informations d\'un membre',
@@ -117,6 +115,11 @@ final class MembreController extends AbstractController
     
     }
 
+
+    //DELETE MEMBER 
+    
+    
+    #[OA\Tag(name: 'Membres')]
     #[IsGranted(new Expression('is_granted("ROLE_ADMININSTRATEUR") or is_granted("ROLE_MANAGER")'))]
     #[Route('/api/membres/{id}', name: 'app_member_delete', methods: ['DELETE'])]
     public function deleteMember(Member $member, EntityManagerInterface $em)
@@ -128,33 +131,60 @@ final class MembreController extends AbstractController
     }
 
 
-
-
+    //ADD MEMBER
         #[OA\Post(
         path: '/api/membres',
         summary: 'Créer un nouveau membre',
+        tags:['Membres'],
         requestBody: new OA\RequestBody(
             required: true,
             description: 'Exemple des données du membre à créer',
-            content: new OA\JsonContent(
-                type: 'object',
-                properties: [
-                    new OA\Property(property: 'firstName', type: 'string', example: 'Sarah'),
-                    new OA\Property(property: 'lastName', type: 'string', example: 'Kouadio'),
-                    new OA\Property(property: 'tel', type: 'string', example: '772233445'),
-                    new OA\Property(property: 'quartier', type: 'string', example: 'FANN'),
-                    new OA\Property(property: 'nationalite', type: 'string', example: 'Côte d\'Ivoire'),
-                    new OA\Property(property: 'isMember', type: 'boolean', example: true),
-                    new OA\Property(property: 'memberJoinedDate', type: 'string', format: 'date', example: '12/04/2024'),
-                    new OA\Property(property: 'isBaptized', type: 'boolean', example: true),
-                    new OA\Property(property: 'baptismDate', type: 'string', format: 'date', example: '01/06/2024'),
-                    new OA\Property(property: 'hasTransport', type: 'boolean', example: false),
-                    new OA\Property(property: 'transportDate', type: 'string', format: 'date', nullable: true, example: null),
-                    new OA\Property(property: 'isInHomeCell', type: 'boolean', example: true),
-                    new OA\Property(property: 'homeCellJoinDate', type: 'string', format: 'date', example: '15/05/2024'),
-                    new OA\Property(property: 'observations', type: 'string', nullable: true, example: 'Inscrite après la croisade')
-                ]
+            
+            content: new OA\MediaType(
+                mediaType: "application/json",
+                schema: new OA\Schema(
+                    type: "object",
+                    required: ["firstName", "lastName", "tel", "quartier", "nationalite"],
+                    properties: [
+                        new OA\Property(property: 'firstName', type: 'string', example: 'Sarah'),
+                        new OA\Property(property: 'lastName', type: 'string', example: 'Kouadio'),
+                        new OA\Property(property: 'tel', type: 'string', example: '772233445'),
+                        new OA\Property(property: 'quartier', type: 'string', example: 'FANN'),
+                        new OA\Property(property: 'nationalite', type: 'string', example: 'Côte d\'Ivoire'),
+                        new OA\Property(property: 'isMember', type: 'boolean', example: true),
+                        new OA\Property(
+                            property: 'memberJoinedDate',
+                            type: 'string',
+                            example: '12/04/2024',
+                            description: 'Date d\'adhésion (format jj/mm/aaaa)'
+                        ),
+                        new OA\Property(property: 'isBaptized', type: 'boolean', example: true),
+                        new OA\Property(
+                            property: 'baptismDate',
+                            type: 'string',
+                            example: '01/06/2024',
+                            description: 'Date de baptême (format jj/mm/aaaa)'
+                        ),
+                        new OA\Property(property: 'hasTransport', type: 'boolean', example: false),
+                        new OA\Property(
+                            property: 'transportDate',
+                            type: 'string',
+                            nullable: true,
+                            example: null,
+                            description: 'Date de transport (format jj/mm/aaaa ou null)'
+                        ),
+                        new OA\Property(property: 'isInHomeCell', type: 'boolean', example: true),
+                        new OA\Property(
+                            property: 'homeCellJoinDate',
+                            type: 'string',
+                            example: '15/05/2024',
+                            description: 'Date d\'entrée en cellule de maison (format jj/mm/aaaa)'
+                        ),
+                        new OA\Property(property: 'observations', type: 'string', nullable: true, example: 'Inscrite après la croisade')
+                    ]
+                )
             )
+
         ),
         responses: [
             new OA\Response(
@@ -218,6 +248,65 @@ final class MembreController extends AbstractController
 
     
 
+    //UPDATE MEMBER
+        #[OA\Put(
+        path: '/api/membres/{id}',
+        summary: 'Modifier les informations d’un membre',
+        security: [['bearerAuth' => []]],
+        tags: ['Membres'],
+        parameters: [
+            new OA\Parameter(
+                name: 'id',
+                in: 'path',
+                required: true,
+                description: 'Identifiant du membre à modifier',
+                schema: new OA\Schema(type: 'integer')
+            )
+        ],
+        requestBody: new OA\RequestBody(
+            required: false,
+            content: new OA\MediaType(
+                mediaType: 'application/json',
+                schema: new OA\Schema(
+                    type: 'object',
+                    properties: [
+                        new OA\Property(property: 'firstName', type: 'string', example: 'Sarah'),
+                        new OA\Property(property: 'lastName', type: 'string', example: 'Kouadio'),
+                        new OA\Property(property: 'tel', type: 'string', example: '772233445'),
+                        new OA\Property(property: 'quartier', type: 'string', example: 'FANN'),
+                        new OA\Property(property: 'nationalite', type: 'string', example: 'Côte d\'Ivoire'),
+                        new OA\Property(property: 'isMember', type: 'boolean', example: true),
+                        new OA\Property(property: 'memberJoinedDate', type: 'string', example: '12/04/2024', description: 'Format jj/mm/aaaa'),
+                        new OA\Property(property: 'isBaptized', type: 'boolean', example: true),
+                        new OA\Property(property: 'baptismDate', type: 'string', example: '01/06/2024', description: 'Format jj/mm/aaaa'),
+                        new OA\Property(property: 'hasTransport', type: 'boolean', example: false),
+                        new OA\Property(property: 'transportDate', type: 'string', nullable: true, example: null, description: 'Format jj/mm/aaaa ou null'),
+                        new OA\Property(property: 'isInHomeCell', type: 'boolean', example: true),
+                        new OA\Property(property: 'homeCellJoinDate', type: 'string', example: '15/05/2024', description: 'Format jj/mm/aaaa'),
+                        new OA\Property(property: 'observations', type: 'string', nullable: true, example: 'Inscrite après la croisade')
+                    ]
+                )
+            )
+        ),
+        responses: [
+            new OA\Response(
+                response: 204,
+                description: 'Membre mis à jour avec succès'
+            ),
+            new OA\Response(
+                response: 400,
+                description: 'Erreur de validation ou format incorrect'
+            ),
+            new OA\Response(
+                response: 403,
+                description: 'Accès refusé – rôle insuffisant'
+            ),
+            new OA\Response(
+                response: 404,
+                description: 'Membre non trouvé'
+            )
+        ]
+    )]
     #[IsGranted(new Expression('is_granted("ROLE_ADMINISTRATEUR") or is_granted("ROLE_MANAGER")'))]
     #[Route('/api/membres/{id}', name: 'app_member_edit', methods: ['PUT'])]
     public function updateMember(Request $request, Member $currentMember, EntityManagerInterface $entityManager, SerializerInterface $serializer)
@@ -229,51 +318,94 @@ final class MembreController extends AbstractController
         $json = $request->getContent();
         $context = DeserializationContext::create(); 
         $context->setAttribute(ExistingObjectConstructor::ATTRIBUTE, $currentMember);
-        $serializer->deserialize($json, Member::class, 'json', $context);    
+        $serializer->deserialize($json, get_class($currentMember), 'json', $context);    
         
         $entityManager->flush();
 
         return $this->json(null, Response::HTTP_NO_CONTENT);
     }
 
-/* 
-    #[Route('/api/stats', name: 'app_member_stats', methods: ['GET'])]
-    public function stats(MemberRepository $memberRepository){
-        //$total_des_membres = count($memberRepository->findAll());
-        //$total_mois = $memberRepository->countMembersThisMonth();
-        //$total_year = $memberRepository->countMembersThisYear();
 
-        // Mois en cours
-        // Mois courant
-        $statsMonth = $memberRepository->getStats(date('Y'), date('m'));
 
-        // Année courante
-        $statsYear = $memberRepository->getStats(date('Y'), null);
+// UPDATE PROFILE
+#[OA\Put(
+    path: '/api/profile',
+    summary: 'Modifier les informations du profil utilisateur',
+    tags: ['Profil Utilisateur'],
+    requestBody: new OA\RequestBody(
+        required: true,
+        content: new OA\MediaType(
+            mediaType: 'multipart/form-data',
+            schema: new OA\Schema(
+                type: 'object',
+                properties: [
+                    new OA\Property(property: 'firstName', type: 'string'),
+                    new OA\Property(property: 'lastName', type: 'string'),
+                    new OA\Property(property: 'email', type: 'string', format: 'email'),
+                    new OA\Property(property: 'image', type: 'string', format: 'binary', nullable: true)
+                ]
+            )
+        )
+    ),
+    responses: [
+        new OA\Response(response: 200, description: 'Profil modifié avec succès'),
+        new OA\Response(response: 400, description: 'Requête invalide'),
+        new OA\Response(response: 401, description: 'Utilisateur non connecté')
+    ]
+)]
+#[IsGranted("IS_AUTHENTICATED_FULLY")]
+#[Route('/api/profile', name: 'app_profile', methods: ['PUT'])]
+public function updateProfile(
+    Request $request,
+    ValidatorInterface $validator,
+    EntityManagerInterface $em,
+    SerializerInterface $serializer
+): JsonResponse {
+    /** @var User|null $currentUser */
+    $currentUser = $this->getUser();
 
-        // Tout depuis le début
-        $statsGlobal = $memberRepository->getStats(null, null);
+    if (!$currentUser instanceof User) {
+        return $this->json(['error' => 'Utilisateur non connecté'], Response::HTTP_UNAUTHORIZED);
+    }
 
-        // Personnalisé (exemple : février 2024)
-        $statsCustom = $memberRepository->getStats(2024, 2);
+    // Champs texte
+    $firstName = $request->request->get('firstName');
+    $lastName  = $request->request->get('lastName');
+    $email     = $request->request->get('email');
 
-        dd($statsMonth,$statsYear,$statsGlobal,$statsCustom);
-        //dd($total_des_membres,$total_mois,$total_year);
-        //$now= new DateTime('NOW');
-        //$currentMonth = $now->format('m');
-        
-       /*  $total_mois=0;
-        $currentMonth=date('m');
-        foreach ($memberRepository->findAll() as $member) {
-            $date = $member->getCreatedAt();
-            $mois= $date->format('m');
-            
-            if ($mois == $currentMonth) {
-                $total_mois++;    
-            }
-       
-        }
-        dd($total_mois); */
+    if ($firstName !== null) {
+        $currentUser->setFirstName($firstName);
+    }
+    if ($lastName !== null) {
+        $currentUser->setLastName($lastName);
+    }
+    if ($email !== null) {
+        $currentUser->setEmail($email);
+    }
 
-    #}
+    // Fichier image (optionnel)
+    $file = $request->files->get('image');
+    if ($file) {
+        $filename = uniqid() . '.' . $file->guessExtension();
+        $file->move($this->getParameter('photo_profil'), $filename);
+        $currentUser->setProfilePhoto($filename);
+    }
+
+    // Validation
+    $errors = $validator->validate($currentUser);
+    if (count($errors) > 0) {
+        return new JsonResponse(
+            $serializer->serialize($errors, 'json'),
+            Response::HTTP_BAD_REQUEST,
+            [],
+            true
+        );
+    }
+
+    $em->flush();
+
+    return $this->json(['message' => 'Profil mis à jour avec succès'], Response::HTTP_OK);
+}
+
     
 }
