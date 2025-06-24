@@ -13,15 +13,17 @@ use Nelmio\ApiDocBundle\Attribute\Model;
 use JMS\Serializer\DeserializationContext;
 use App\Serializer\ExistingObjectConstructor;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\Security\Core\Security;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\HttpFoundation\JsonResponse;
-use Symfony\Component\ExpressionLanguage\Expression;
 //use Nelmio\ApiDocBundle\Attribute\Model as AttributeModel;
+use Symfony\Component\ExpressionLanguage\Expression;
+use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-use Symfony\Component\Security\Core\Security;
+use Symfony\Component\HttpFoundation\File\Exception\FileException;
 
 final class MembreController extends AbstractController
 {
@@ -309,103 +311,139 @@ final class MembreController extends AbstractController
     )]
     #[IsGranted(new Expression('is_granted("ROLE_ADMINISTRATEUR") or is_granted("ROLE_MANAGER")'))]
     #[Route('/api/membres/{id}', name: 'app_member_edit', methods: ['PUT'])]
-    public function updateMember(Request $request, Member $currentMember, EntityManagerInterface $entityManager, SerializerInterface $serializer)
+    public function updateMember(Request $request, Member $currentMember, EntityManagerInterface $entityManager, 
+    SerializerInterface $serializer, ValidatorInterface $validator)
     {
         /* $updateMember= $serializer->deserialize($request->getContent(), 
                     Member::class,
                     'json', 
                     [AbstractNormalizer::OBJECT_TO_POPULATE => $currentMember]); */
-        $json = $request->getContent();
+
+       /*  $json = $request->getContent();
         $context = DeserializationContext::create(); 
         $context->setAttribute(ExistingObjectConstructor::ATTRIBUTE, $currentMember);
         $serializer->deserialize($json, get_class($currentMember), 'json', $context);    
         
         $entityManager->flush();
 
-        return $this->json(null, Response::HTTP_NO_CONTENT);
+        return $this->json(null, Response::HTTP_NO_CONTENT); */
+        $updateInformation = $serializer->deserialize($request->getContent(),Member::class,'json');
+        $currentMember->setFirstName($updateInformation->getFirstName())
+                    ->setLastName($updateInformation->getLastName())
+                    ->setTel($updateInformation->getTel())
+                    ->setQuartier(($updateInformation->getQuartier()))
+                    ->setNationalite($updateInformation->getNationalite())
+                    ->setIsMember($updateInformation->isMember())
+                    ->setMemberJoinedDate($updateInformation->getMemberJoinedDate())
+                    ->setIsBaptized($updateInformation->isBaptized())
+                    ->setBaptismDate($updateInformation->getBaptismDate())
+                    ->setHasTransport($updateInformation->hasTransport())
+                    ->setTransportDate($updateInformation->getTransportDate())
+                    ->setIsInHomeCell($updateInformation->isInHomeCell())
+                    ->setHomeCellJoinDate($updateInformation->getHomeCellJoinDate())
+                    ->setObservations($updateInformation->getObservations());
+        
+        //On vérifie les erreurs
+        $errors = $validator->validate($currentMember);
+        if ($errors->count() > 0) {
+            $json = $serializer->serialize($errors, 'json');
+            return new JsonResponse($json, Response::HTTP_BAD_REQUEST);
+        }
+
+        $entityManager->persist($currentMember);
+        $entityManager->flush();
+
+        return new JsonResponse(null, Response::HTTP_NO_CONTENT);
+
+
     }
 
 
 
-// UPDATE PROFILE
+
+
+
 #[OA\Put(
     path: '/api/profile',
-    summary: 'Modifier les informations du profil utilisateur',
+    summary: 'Met à jour les informations personnelles du profil connecté (modification partielle)',
     tags: ['Profil Utilisateur'],
     requestBody: new OA\RequestBody(
         required: true,
-        content: new OA\MediaType(
-            mediaType: 'multipart/form-data',
-            schema: new OA\Schema(
-                type: 'object',
-                properties: [
-                    new OA\Property(property: 'firstName', type: 'string'),
-                    new OA\Property(property: 'lastName', type: 'string'),
-                    new OA\Property(property: 'email', type: 'string', format: 'email'),
-                    new OA\Property(property: 'image', type: 'string', format: 'binary', nullable: true)
-                ]
+        content: [
+            new OA\MediaType(
+                mediaType: 'multipart/form-data',
+                schema: new OA\Schema(
+                    type: 'object',
+                    properties: [
+                        new OA\Property(property: 'firstName', type: 'string', example: 'Fatou'),
+                        new OA\Property(property: 'lastName', type: 'string', example: 'Diop'),
+                        new OA\Property(property: 'email', type: 'string', format: 'email', example: 'fatou@example.com'),
+                        new OA\Property(property: 'image', type: 'string', format: 'binary', nullable: true)
+                    ]
+                )
             )
-        )
+        ]
     ),
     responses: [
-        new OA\Response(response: 200, description: 'Profil modifié avec succès'),
-        new OA\Response(response: 400, description: 'Requête invalide'),
+        new OA\Response(response: 204, description: 'Profil mis à jour avec succès'),
+        new OA\Response(response: 400, description: 'Données invalides'),
         new OA\Response(response: 401, description: 'Utilisateur non connecté')
     ]
 )]
-#[IsGranted("IS_AUTHENTICATED_FULLY")]
-#[Route('/api/profile', name: 'app_profile', methods: ['PUT'])]
+#[IsGranted('IS_AUTHENTICATED_FULLY')]
+#[Route('/api/profile', name: 'app_profile_update', methods: ['PUT'])]
 public function updateProfile(
     Request $request,
+    Security $security,
     ValidatorInterface $validator,
-    EntityManagerInterface $em,
+    EntityManagerInterface $entityManager,
     SerializerInterface $serializer
 ): JsonResponse {
-    /** @var User|null $currentUser */
-    $currentUser = $this->getUser();
+    /** @var User $user */
+    $user = $security->getUser();
 
-    if (!$currentUser instanceof User) {
-        return $this->json(['error' => 'Utilisateur non connecté'], Response::HTTP_UNAUTHORIZED);
+    if (!$user instanceof UserInterface) {
+        return new JsonResponse(['message' => 'Utilisateur non connecté'], JsonResponse::HTTP_UNAUTHORIZED);
     }
 
-    // Champs texte
+    // Champs facultatifs : appliquer uniquement s’ils sont soumis
     $firstName = $request->request->get('firstName');
-    $lastName  = $request->request->get('lastName');
-    $email     = $request->request->get('email');
+    $lastName = $request->request->get('lastName');
+    $email = $request->request->get('email');
 
-    if ($firstName !== null) {
-        $currentUser->setFirstName($firstName);
-    }
-    if ($lastName !== null) {
-        $currentUser->setLastName($lastName);
-    }
-    if ($email !== null) {
-        $currentUser->setEmail($email);
-    }
+    if ($firstName !== null) $user->setFirstName($firstName);
+    if ($lastName !== null) $user->setLastName($lastName);
+    if ($email !== null) $user->setEmail($email);
 
-    // Fichier image (optionnel)
+    /** @var UploadedFile|null $file */
     $file = $request->files->get('image');
     if ($file) {
-        $filename = uniqid() . '.' . $file->guessExtension();
-        $file->move($this->getParameter('photo_profil'), $filename);
-        $currentUser->setProfilePhoto($filename);
+        try {
+            $filename = uniqid() . '.' . $file->getClientOriginalExtension();
+            $file->move($this->getParameter('photo_profil'), $filename);
+            $user->setProfilePhoto($filename);
+        } catch (FileException $e) {
+            return new JsonResponse(['error' => 'Échec du téléchargement de l\'image'], 500);
+        }
     }
 
     // Validation
-    $errors = $validator->validate($currentUser);
+    $errors = $validator->validate($user);
     if (count($errors) > 0) {
         return new JsonResponse(
             $serializer->serialize($errors, 'json'),
-            Response::HTTP_BAD_REQUEST,
+            JsonResponse::HTTP_BAD_REQUEST,
             [],
             true
         );
     }
 
-    $em->flush();
+    $entityManager->persist($user);
+    $entityManager->flush();
 
-    return $this->json(['message' => 'Profil mis à jour avec succès'], Response::HTTP_OK);
+    return new JsonResponse(null, Response::HTTP_NO_CONTENT);
 }
+
 
     
 }
