@@ -27,9 +27,9 @@ use Symfony\Component\HttpFoundation\File\Exception\FileException;
 
 final class MembreController extends AbstractController
 {
-    
-        
-    
+
+
+
     #[OA\Get(
         path: '/api/membres',
         summary: 'Liste des membres',
@@ -56,71 +56,72 @@ final class MembreController extends AbstractController
                 description: 'Retourne la liste des membres',
                 content: new OA\JsonContent(
                     type: 'array',
-                    items: new OA\Items(ref: new Model (type: Member::class, groups: ['getMembers']))
+                    items: new OA\Items(ref: new Model(type: Member::class, groups: ['getMembers']))
                 )
             )
         ]
     )]
-    #[Route('/api/membres', name: 'app_membre', methods:["GET"])]
+    #[Route('/api/membres', name: 'app_membre', methods: ["GET"])]
     public function getAllMembers(MemberRepository $memberRepository, Request $request, SerializerInterface $serializer)
     {
-        $page=$request->get('page',1);
-        $limit = $request->get('limit',10);
+        $page = $request->get('page', 1);
+        $limit = $request->get('limit', 10);
         $members = $memberRepository->findAllWithPagination($page, $limit);
         $context = SerializationContext::create()->setGroups(["getMembers"]);
-        $json = $serializer->serialize($members, 'json',$context);
-        $response = new JsonResponse($json, Response::HTTP_OK,[
-            'Content-Type'=>'application/json'
-        ],true);
+        $context->enableMaxDepthChecks();
+        $json = $serializer->serialize($members, 'json', $context);
+        $response = new JsonResponse($json, Response::HTTP_OK, [
+            'Content-Type' => 'application/json'
+        ], true);
 
         return $response;
-      
+
 
         //return $this->json($memberRepository->findAllWithPagination($page,$limit),Response::HTTP_OK,[],$context);
         //return $this->json($memberRepository->findAll(),Response::HTTP_OK,[],['groups'=>'getMembers'], $context);
         //$response = new JsonResponse($memberRepository->findAllWithPagination($page, $limit),Response::HTTP_OK,[], $context);
         //return $response;
-        
+
     }
 
 
 
     //SHOW DETAILS MEMBER
     #[OA\Get(
-        path :"/api/membres/{id}",
+        path: "/api/membres/{id}",
         summary: 'Voir le détail des informations d\'un membre',
         tags: ['Membres'],
-       
+
         responses: [
             new OA\Response(
                 response: Response::HTTP_OK,
                 description: 'Retourne le détail du membre demandé',
                 content: new OA\JsonContent(
                     type: 'array',
-                    items: new OA\Items(ref: new Model (type: Member::class, groups: ['getMembers']))
+                    items: new OA\Items(ref: new Model(type: Member::class, groups: ['getMembers']))
                 )
             )
         ]
     )]
-    
+
     #[Route('/api/membres/{id}', name: 'app_membre_show', methods: ['GET'])]
     public function show(Member $member, SerializerInterface $serializer)
     {
-       $context = SerializationContext::create()->setGroups(["getMembers"]);
-       $json= $serializer->serialize($member, 'json', $context);
-       $response = new JsonResponse($json, Response::HTTP_OK, [
-        'Content-Type'=>'application/json'
-       ],true);
+        $context = SerializationContext::create()->setGroups(["getMembers"]);
+        $json = $serializer->serialize($member, 'json', $context);
+        $response = new JsonResponse($json, Response::HTTP_OK, [
+            'Content-Type' => 'application/json'
+        ], true);
         return $response;
 
         //return $this->json($member, Response::HTTP_OK, [], ['groups'=>'getMembers']); 
-    
+
     }
 
 
     //DELETE MEMBER 
-    
-    
+
+
     #[OA\Tag(name: 'Membres')]
     #[IsGranted(new Expression('is_granted("ROLE_ADMININSTRATEUR") or is_granted("ROLE_MANAGER")'))]
     #[Route('/api/membres/{id}', name: 'app_member_delete', methods: ['DELETE'])]
@@ -134,14 +135,14 @@ final class MembreController extends AbstractController
 
 
     //ADD MEMBER
-        #[OA\Post(
+    #[OA\Post(
         path: '/api/membres',
         summary: 'Créer un nouveau membre',
-        tags:['Membres'],
+        tags: ['Membres'],
         requestBody: new OA\RequestBody(
             required: true,
             description: 'Exemple des données du membre à créer',
-            
+
             content: new OA\MediaType(
                 mediaType: "application/json",
                 schema: new OA\Schema(
@@ -212,46 +213,46 @@ final class MembreController extends AbstractController
             $jsonRecu = $request->getContent();
             $member = $serializer->deserialize($jsonRecu, Member::class, 'json');
 
-             //  Lier le créateur connecté
+            //  Lier le créateur connecté
             $member->setCreatedBy($this->getUser())
-                    ->setCreatedAt(new \DateTimeImmutable());
+                ->setCreatedAt(new \DateTimeImmutable());
 
             $errors = $validator->validate($member);
 
             if ($errors->count() > 0) {
 
-                $error_serialize=$serializer->serialize($errors,'json');
-                return new JsonResponse($error_serialize,Response::HTTP_BAD_REQUEST,[],true);
+                $error_serialize = $serializer->serialize($errors, 'json');
+                return new JsonResponse($error_serialize, Response::HTTP_BAD_REQUEST, [], true);
             }
-        
+
             $entityManager->persist($member);
             $entityManager->flush();
 
-            
+
 
             $context = SerializationContext::create()->setGroups(["getMembers"]);
-            $jsonMember = $serializer->serialize($member,'json',$context);
+            $jsonMember = $serializer->serialize($member, 'json', $context);
             #$location = $urlGenerator->generate('detailMember', ['id'=>$member->getId()],UrlGeneratorInterface::A) */
-            return new JsonResponse($jsonMember, Response::HTTP_CREATED,[
-                'message'=>'Membre crée avec succès',
-                'id'=>$member->getId()
-            ],true);
+            return new JsonResponse($jsonMember, Response::HTTP_CREATED, [
+                'message' => 'Membre crée avec succès',
+                'id' => $member->getId()
+            ], true);
         } catch (\Exception $e) {
             return $this->json([
-                'error'=>'Erreur lors de la création du membre',
-                'details'=>$e->getMessage()
-            ],Response::HTTP_BAD_REQUEST);
+                'error' => 'Erreur lors de la création du membre',
+                'details' => $e->getMessage()
+            ], Response::HTTP_BAD_REQUEST);
         }
-       
 
-    
-        return $this->json($member, Response::HTTP_CREATED, [], ['groups'=>'getMembers']);
+
+
+        return $this->json($member, Response::HTTP_CREATED, [], ['groups' => 'getMembers']);
     }
 
-    
+
 
     //UPDATE MEMBER
-        #[OA\Put(
+    #[OA\Put(
         path: '/api/membres/{id}',
         summary: 'Modifier les informations d’un membre',
         security: [['bearerAuth' => []]],
@@ -311,15 +312,19 @@ final class MembreController extends AbstractController
     )]
     #[IsGranted(new Expression('is_granted("ROLE_ADMINISTRATEUR") or is_granted("ROLE_MANAGER")'))]
     #[Route('/api/membres/{id}', name: 'app_member_edit', methods: ['PUT'])]
-    public function updateMember(Request $request, Member $currentMember, EntityManagerInterface $entityManager, 
-    SerializerInterface $serializer, ValidatorInterface $validator)
-    {
+    public function updateMember(
+        Request $request,
+        Member $currentMember,
+        EntityManagerInterface $entityManager,
+        SerializerInterface $serializer,
+        ValidatorInterface $validator
+    ) {
         /* $updateMember= $serializer->deserialize($request->getContent(), 
                     Member::class,
                     'json', 
                     [AbstractNormalizer::OBJECT_TO_POPULATE => $currentMember]); */
 
-       /*  $json = $request->getContent();
+        /*  $json = $request->getContent();
         $context = DeserializationContext::create(); 
         $context->setAttribute(ExistingObjectConstructor::ATTRIBUTE, $currentMember);
         $serializer->deserialize($json, get_class($currentMember), 'json', $context);    
@@ -327,22 +332,22 @@ final class MembreController extends AbstractController
         $entityManager->flush();
 
         return $this->json(null, Response::HTTP_NO_CONTENT); */
-        $updateInformation = $serializer->deserialize($request->getContent(),Member::class,'json');
+        $updateInformation = $serializer->deserialize($request->getContent(), Member::class, 'json');
         $currentMember->setFirstName($updateInformation->getFirstName())
-                    ->setLastName($updateInformation->getLastName())
-                    ->setTel($updateInformation->getTel())
-                    ->setQuartier(($updateInformation->getQuartier()))
-                    ->setNationalite($updateInformation->getNationalite())
-                    ->setIsMember($updateInformation->isMember())
-                    ->setMemberJoinedDate($updateInformation->getMemberJoinedDate())
-                    ->setIsBaptized($updateInformation->isBaptized())
-                    ->setBaptismDate($updateInformation->getBaptismDate())
-                    ->setHasTransport($updateInformation->hasTransport())
-                    ->setTransportDate($updateInformation->getTransportDate())
-                    ->setIsInHomeCell($updateInformation->isInHomeCell())
-                    ->setHomeCellJoinDate($updateInformation->getHomeCellJoinDate())
-                    ->setObservations($updateInformation->getObservations());
-        
+            ->setLastName($updateInformation->getLastName())
+            ->setTel($updateInformation->getTel())
+            ->setQuartier(($updateInformation->getQuartier()))
+            ->setNationalite($updateInformation->getNationalite())
+            ->setIsMember($updateInformation->isMember())
+            ->setMemberJoinedDate($updateInformation->getMemberJoinedDate())
+            ->setIsBaptized($updateInformation->isBaptized())
+            ->setBaptismDate($updateInformation->getBaptismDate())
+            ->setHasTransport($updateInformation->hasTransport())
+            ->setTransportDate($updateInformation->getTransportDate())
+            ->setIsInHomeCell($updateInformation->isInHomeCell())
+            ->setHomeCellJoinDate($updateInformation->getHomeCellJoinDate())
+            ->setObservations($updateInformation->getObservations());
+
         //On vérifie les erreurs
         $errors = $validator->validate($currentMember);
         if ($errors->count() > 0) {
@@ -354,8 +359,6 @@ final class MembreController extends AbstractController
         $entityManager->flush();
 
         return new JsonResponse(null, Response::HTTP_NO_CONTENT);
-
-
     }
 
 
@@ -363,87 +366,85 @@ final class MembreController extends AbstractController
 
 
 
-#[OA\Put(
-    path: '/api/profile',
-    summary: 'Met à jour les informations personnelles du profil connecté (modification partielle)',
-    tags: ['Profil Utilisateur'],
-    requestBody: new OA\RequestBody(
-        required: true,
-        content: [
-            new OA\MediaType(
-                mediaType: 'multipart/form-data',
-                schema: new OA\Schema(
-                    type: 'object',
-                    properties: [
-                        new OA\Property(property: 'firstName', type: 'string', example: 'Fatou'),
-                        new OA\Property(property: 'lastName', type: 'string', example: 'Diop'),
-                        new OA\Property(property: 'email', type: 'string', format: 'email', example: 'fatou@example.com'),
-                        new OA\Property(property: 'image', type: 'string', format: 'binary', nullable: true)
-                    ]
+    #[OA\Post(
+        path: '/api/profile',
+        summary: 'Met à jour les informations personnelles du profil connecté (modification partielle)',
+        tags: ['Profil Utilisateur'],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: [
+                new OA\MediaType(
+                    mediaType: 'multipart/form-data',
+                    schema: new OA\Schema(
+                        type: 'object',
+                        properties: [
+                            new OA\Property(property: 'firstName', type: 'string', example: 'Fatou'),
+                            new OA\Property(property: 'lastName', type: 'string', example: 'Diop'),
+                            new OA\Property(property: 'email', type: 'string', format: 'email', example: 'fatou@example.com'),
+                            new OA\Property(property: 'image', type: 'string', format: 'binary', nullable: true)
+                        ]
+                    )
                 )
-            )
+            ]
+        ),
+        responses: [
+            new OA\Response(response: 204, description: 'Profil mis à jour avec succès'),
+            new OA\Response(response: 400, description: 'Données invalides'),
+            new OA\Response(response: 401, description: 'Utilisateur non connecté')
         ]
-    ),
-    responses: [
-        new OA\Response(response: 204, description: 'Profil mis à jour avec succès'),
-        new OA\Response(response: 400, description: 'Données invalides'),
-        new OA\Response(response: 401, description: 'Utilisateur non connecté')
-    ]
-)]
-#[IsGranted('IS_AUTHENTICATED_FULLY')]
-#[Route('/api/profile', name: 'app_profile_update', methods: ['PUT'])]
-public function updateProfile(
-    Request $request,
-    Security $security,
-    ValidatorInterface $validator,
-    EntityManagerInterface $entityManager,
-    SerializerInterface $serializer
-): JsonResponse {
-    /** @var User $user */
-    $user = $security->getUser();
+    )]
+    #[IsGranted('IS_AUTHENTICATED_FULLY')]
+    #[Route('/api/profile', name: 'app_profile_update', methods: ['POST'])]
+    public function updateProfile(
+        Request $request,
+        Security $security,
+        ValidatorInterface $validator,
+        EntityManagerInterface $entityManager,
+        SerializerInterface $serializer
+    ): JsonResponse {
+        /** @var User $user */
+        $user = $security->getUser();
+        // dd("User : ", $user->getFirstName());
 
-    if (!$user instanceof UserInterface) {
-        return new JsonResponse(['message' => 'Utilisateur non connecté'], JsonResponse::HTTP_UNAUTHORIZED);
-    }
-
-    // Champs facultatifs : appliquer uniquement s’ils sont soumis
-    $firstName = $request->request->get('firstName');
-    $lastName = $request->request->get('lastName');
-    $email = $request->request->get('email');
-
-    if ($firstName !== null) $user->setFirstName($firstName);
-    if ($lastName !== null) $user->setLastName($lastName);
-    if ($email !== null) $user->setEmail($email);
-
-    /** @var UploadedFile|null $file */
-    $file = $request->files->get('image');
-    if ($file) {
-        try {
-            $filename = uniqid() . '.' . $file->getClientOriginalExtension();
-            $file->move($this->getParameter('photo_profil'), $filename);
-            $user->setProfilePhoto($filename);
-        } catch (FileException $e) {
-            return new JsonResponse(['error' => 'Échec du téléchargement de l\'image'], 500);
+        if (!$user instanceof UserInterface) {
+            return new JsonResponse(['message' => 'Utilisateur non connecté'], JsonResponse::HTTP_UNAUTHORIZED);
         }
+
+        // Champs facultatifs : appliquer uniquement s’ils sont soumis
+        $firstName = $request->request->get('firstName');
+        $lastName = $request->request->get('lastName');
+        $email = $request->request->get('email');
+
+        if ($firstName !== null) $user->setFirstName($firstName);
+        if ($lastName !== null) $user->setLastName($lastName);
+        if ($email !== null) $user->setEmail($email);
+
+        /** @var UploadedFile|null $file */
+        $file = $request->files->get('image');
+        if ($file) {
+            try {
+                $filename = uniqid() . '.' . $file->getClientOriginalExtension();
+                $file->move($this->getParameter('photo_profil'), $filename);
+                $user->setProfilePhoto($filename);
+            } catch (FileException $e) {
+                return new JsonResponse(['error' => 'Échec du téléchargement de l\'image'], 500);
+            }
+        }
+
+        // Validation
+        $errors = $validator->validate($user);
+        if (count($errors) > 0) {
+            return new JsonResponse(
+                $serializer->serialize($errors, 'json'),
+                JsonResponse::HTTP_BAD_REQUEST,
+                [],
+                true
+            );
+        }
+
+        $entityManager->persist($user);
+        $entityManager->flush();
+
+        return new JsonResponse(null, Response::HTTP_NO_CONTENT);
     }
-
-    // Validation
-    $errors = $validator->validate($user);
-    if (count($errors) > 0) {
-        return new JsonResponse(
-            $serializer->serialize($errors, 'json'),
-            JsonResponse::HTTP_BAD_REQUEST,
-            [],
-            true
-        );
-    }
-
-    $entityManager->persist($user);
-    $entityManager->flush();
-
-    return new JsonResponse(null, Response::HTTP_NO_CONTENT);
-}
-
-
-    
 }

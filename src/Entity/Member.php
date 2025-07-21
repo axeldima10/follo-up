@@ -9,6 +9,9 @@ use JMS\Serializer\Annotation\Type;
 use App\Repository\MemberRepository;
 use JMS\Serializer\Annotation\Groups;
 use Hateoas\Configuration\Annotation as Hateoas;
+use JMS\Serializer\Annotation\MaxDepth;
+use JMS\Serializer\Annotation\SerializedName;
+use JMS\Serializer\Annotation\VirtualProperty;
 use Symfony\Component\Validator\Constraints as Assert;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 
@@ -55,7 +58,7 @@ class Member
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
-    #[ORM\Column] 
+    #[ORM\Column]
     #[Groups(["getMembers"])]
     private ?int $id = null;
 
@@ -96,7 +99,7 @@ class Member
     #[Assert\NotNull(message: "Le champ 'isMember' est requis")]
     private ?bool $isMember = null;
 
-    #[ORM\Column(type: Types::DATE_MUTABLE,nullable: true)]
+    #[ORM\Column(type: Types::DATE_MUTABLE, nullable: true)]
     #[Groups(["getMembers"])]
     #[Assert\Type("\DateTimeInterface", message: "Renseignez une date valide")]
     #[Type("DateTime<'d/m/Y'>")]
@@ -107,7 +110,7 @@ class Member
     #[Groups(["getMembers"])]
     private ?bool $isBaptized = null;
 
-    #[ORM\Column(type: Types::DATE_MUTABLE,nullable: true)]
+    #[ORM\Column(type: Types::DATE_MUTABLE, nullable: true)]
     #[Groups(["getMembers"])]
     #[Assert\Type("\DateTimeInterface", message: "Renseignez une date valide")]
     #[Type("DateTime<'d/m/Y'>")]
@@ -118,7 +121,7 @@ class Member
     #[Assert\NotNull(message: "Le champ 'hasTransport' est requis")]
     private ?bool $hasTransport = null;
 
-    #[ORM\Column(type: Types::DATE_MUTABLE,nullable: true)]
+    #[ORM\Column(type: Types::DATE_MUTABLE, nullable: true)]
     #[Groups(["getMembers"])]
     #[Assert\Type("\DateTimeInterface", message: "Renseignez une date valide")]
     #[Type("DateTime<'d/m/Y'>")]
@@ -129,7 +132,7 @@ class Member
     #[Assert\NotNull(message: "Le champ 'isInHomeCell' est requis")]
     private ?bool $isInHomeCell = null;
 
-    #[ORM\Column(type: Types::DATE_MUTABLE,nullable: true)]
+    #[ORM\Column(type: Types::DATE_MUTABLE, nullable: true)]
     #[Groups(["getMembers"])]
     #[Assert\Type("\DateTimeInterface", message: "Renseignez une date valide")]
     #[Type("DateTime<'d/m/Y'>")]
@@ -142,15 +145,30 @@ class Member
     #[ORM\ManyToOne(inversedBy: 'members')]
     #[ORM\JoinColumn(nullable: false)]
     #[Groups(["getMembers"])]
+    #[MaxDepth(1)]
     private ?User $createdBy = null;
+
+    /**
+     * Propriété virtuelle pour exposer le nom de l'auteur directement.
+     */
+    #[VirtualProperty(name: "createdByName")]
+    #[SerializedName("createdByName")]
+    #[Groups(["getMembers"])]
+    public function getCreatedByName(): string
+    {
+        if ($this->createdBy) {
+            return $this->createdBy->getFirstName() . ' ' . $this->createdBy->getLastName();
+        }
+        return 'Auteur inconnu';
+    }
 
 
 
     public function __construct()
     {
-        $this->createdAt= new \DateTimeImmutable();
+        $this->createdAt = new \DateTimeImmutable();
     }
-    
+
     public function getId(): ?int
     {
         return $this->id;
@@ -336,16 +354,15 @@ class Member
         return $this;
     }
 
-   public function getCreatedBy(): ?User
-   {
-       return $this->createdBy;
-   }
+    public function getCreatedBy(): ?User
+    {
+        return $this->createdBy;
+    }
 
-   public function setCreatedBy(?User $createdBy): static
-   {
-       $this->createdBy = $createdBy;
+    public function setCreatedBy(?User $createdBy): static
+    {
+        $this->createdBy = $createdBy;
 
-       return $this;
-   }
-
+        return $this;
+    }
 }

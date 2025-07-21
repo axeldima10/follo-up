@@ -21,9 +21,9 @@ use Symfony\Component\Validator\Constraints as Assert;
 #[InheritanceType("JOINED")]
 #[DiscriminatorColumn("type")]
 #[DiscriminatorMap([
-   "admin"=>"User",
-   "manager"=>"Manager",
-   "consultant"=>"Consultant",
+    "admin" => "User",
+    "manager" => "Manager",
+    "consultant" => "Consultant",
 
 ])]
 #[UniqueEntity(fields: ['email'], message: 'There is already an account with this email')]
@@ -34,18 +34,18 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-    #[Groups(["getMembers"])]
+    #[Groups(["getMembers", "getUsers"])]
     protected ?int $id = null;
 
     #[ORM\Column(length: 180)]
-    #[Groups(["getMembers"])]
+    #[Groups(["getMembers", "getUsers"])]
     protected ?string $email = null;
 
     /**
      * @var list<string> The user roles
      */
     #[ORM\Column]
-    #[Groups(["getMembers"])]
+    #[Groups(["getMembers", "getUsers"])]
     protected array $roles = [];
 
     /**
@@ -55,16 +55,17 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     protected ?string $password = null;
 
     #[ORM\Column(length: 255)]
-    #[Groups(["getMembers"])]
+    #[Groups(["getMembers", "getUsers"])]
     #[Assert\NotBlank(message: "Le prénom est obligatoire")]
     protected ?string $firstName = null;
 
     #[ORM\Column(length: 255)]
-    #[Groups(["getMembers"])]
+    #[Groups(["getMembers", "getUsers"])]
     #[Assert\NotBlank(message: "Le nom est obligatoire")]
     protected ?string $lastName = null;
 
     #[ORM\Column(length: 255, nullable: true)]
+    #[Groups(["getUsers"])]
     private ?string $profilePhoto = null;
 
     /**
@@ -108,7 +109,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     public function __construct()
     {
-        return $this->roles[]="ROLE_ADMINISTRATEUR";
+        return $this->roles[] = "ROLE_ADMINISTRATEUR";
         $this->members = new ArrayCollection();
         $this->managers = new ArrayCollection();
         $this->consultants = new ArrayCollection();
@@ -124,12 +125,13 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return (string) $this->email;
     }
 
-     /**
+    /**
      * Méthode getUsername qui permet de retourner le champ qui est utilisé pour l'authentification.
      *
      * @return string
      */
-    public function getUsername(): string {
+    public function getUsername(): string
+    {
         return $this->getUserIdentifier();
     }
 
@@ -203,7 +205,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
-   
+
 
     /**
      * @return Collection<int, Manager>
@@ -309,13 +311,13 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     public function getProfilePhoto(): ?string
     {
-       return $this->profilePhoto;
+        return $this->profilePhoto;
     }
 
     public function setProfilePhoto(?string $profilePhoto): static
     {
-       $this->profilePhoto = $profilePhoto;
+        $this->profilePhoto = $profilePhoto;
 
-       return $this;
+        return $this;
     }
 }

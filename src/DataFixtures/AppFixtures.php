@@ -14,30 +14,30 @@ class AppFixtures extends Fixture
 {
     private $passwordHasher;
 
-    public function __construct(UserPasswordHasherInterface $passwordHasher) {
-        $this->passwordHasher = $passwordHasher;
-
-    }
-   public function load(ObjectManager $manager): void
+    public function __construct(UserPasswordHasherInterface $passwordHasher)
     {
-          // === ADMIN ===
+        $this->passwordHasher = $passwordHasher;
+    }
+    public function load(ObjectManager $manager): void
+    {
+        // === ADMIN ===
         $admin = new User();
         $admin->setEmail("admin@gmail.com")
             ->setFirstName("Super")
             ->setLastName("Admin")
             ->setPassword($this->passwordHasher->hashPassword($admin, "admin123"));
-            //->setRoles(['ROLE_ADMINISTRATEUR']);
+        //->setRoles(['ROLE_ADMINISTRATEUR']);
         $manager->persist($admin);
 
-         // === MANAGER(S) ===
+        // === MANAGER(S) ===
         $managers = [];
         for ($j = 1; $j <= 4; $j++) {
             $m = new Manager();
             $m->setEmail("manager$j@gmail.com")
-              ->setFirstName("Gestion $j")
-              ->setLastName("naire $j")
-              ->setPassword($this->passwordHasher->hashPassword($m, "passe123"));
-              //->setRoles(['ROLE_MANAGER']);
+                ->setFirstName("Gestion $j")
+                ->setLastName("naire $j")
+                ->setPassword($this->passwordHasher->hashPassword($m, "passe123"));
+            //->setRoles(['ROLE_MANAGER']);
             $manager->persist($m);
             $managers[] = $m;
         }
@@ -45,9 +45,9 @@ class AppFixtures extends Fixture
         // === CONSULTANT ===
         $consultant = new Consultant();
         $consultant->setEmail("consultant@gmail.com")
-                    ->setFirstName("Consultant")
-                    ->setLastName("Consultant")
-                    ->setPassword($this->passwordHasher->hashPassword($consultant,"passe"));
+            ->setFirstName("Consultant")
+            ->setLastName("Consultant")
+            ->setPassword($this->passwordHasher->hashPassword($consultant, "passe"));
         $manager->persist($consultant);
 
 
@@ -88,14 +88,14 @@ class AppFixtures extends Fixture
                 ->setHomeCellJoinDate($isInHomeCell ? clone $variableDate : null)
                 ->setObservations("Observations test $i");
 
-            
+
             // 🔁 Créé aléatoirement par l’admin ou un manager
             $random = rand(0, count($managers));
             if ($random === count($managers)) {
                 $member->setCreatedBy($admin);
             } else {
                 $member->setCreatedBy($managers[$random]);
-            }    
+            }
 
             $manager->persist($member);
         }
