@@ -148,6 +148,16 @@ class Member
     #[MaxDepth(1)]
     private ?User $createdBy = null;
 
+    #[ORM\Column(length: 255)]
+    #[Assert\NotBlank(message: "La statut du membre est obligatoire")]
+    #[Groups(["getMembers"])]
+    private ?string $suivi = null;
+
+    #[ORM\Column]
+    #[Groups(["getMembers"])]
+    #[Assert\NotNull(message: "Le champ 'isNewConvert' est requis")]
+    private ?bool $isNewConvert = null;
+
     /**
      * Propriété virtuelle pour exposer le nom de l'auteur directement.
      */
@@ -362,6 +372,30 @@ class Member
     public function setCreatedBy(?User $createdBy): static
     {
         $this->createdBy = $createdBy;
+
+        return $this;
+    }
+
+    public function getSuivi(): ?string
+    {
+        return $this->suivi;
+    }
+
+    public function setSuivi(string $suivi): static
+    {
+        $this->suivi = $suivi;
+
+        return $this;
+    }
+
+    public function isNewConvert(): ?bool
+    {
+        return $this->isNewConvert;
+    }
+
+    public function setIsNewConvert(bool $isNewConvert): static
+    {
+        $this->isNewConvert = $isNewConvert;
 
         return $this;
     }

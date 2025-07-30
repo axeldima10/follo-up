@@ -55,17 +55,20 @@ class AppFixtures extends Fixture
 
         $nationalities = ["Gabon", "Congo Brazza", "Congo Kinshassa", "Centrafrique", "Nigeria", "Cameroon", "Togo", "Benin"];
         $quartiers = ["Ouest-Foire", "Ouakam", "POINT-E", "FANN", "LIBERTÉ 6"];
+        $suivis=["Non contacté", "Contacté", "En attente de réponse", "Injoignable"];
 
         for ($i = 1; $i <= 20; $i++) {
             $member = new Member();
 
             $randomNationality = $nationalities[array_rand($nationalities)];
             $randomQuartier = $quartiers[array_rand($quartiers)];
+            $randomSuivi = $suivis[array_rand($suivis)];
 
             $isMember = (bool)rand(0, 1);
             $isBaptized = (bool)rand(0, 1);
             $hasTransport = (bool)rand(0, 1);
             $isInHomeCell = (bool)rand(0, 1);
+            $isNewConvert = (bool)rand(0, 1);
 
             // Dates
             $createdAt = new \DateTimeImmutable('-' . rand(0, 365) . ' days');
@@ -85,6 +88,8 @@ class AppFixtures extends Fixture
                 ->setHasTransport($hasTransport)
                 ->setTransportDate($hasTransport ? clone $variableDate : null)
                 ->setIsInHomeCell($isInHomeCell)
+                ->setIsNewConvert($isNewConvert)
+                ->setSuivi($randomSuivi)
                 ->setHomeCellJoinDate($isInHomeCell ? clone $variableDate : null)
                 ->setObservations("Observations test $i");
 

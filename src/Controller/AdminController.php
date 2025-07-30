@@ -199,7 +199,7 @@ ValidatorInterface $validator,UserPasswordHasherInterface $userPasswordHasher,
 #[Route('/api/admin', name: 'app_admin', methods:["POST"])]
 public function createAdmin(Request $request, SerializerInterface $serializer, 
 ValidatorInterface $validator,UserPasswordHasherInterface $userPasswordHasher, 
-    EntityManagerInterface $em){
+    EntityManagerInterface $em){ 
 
     $jsonRecu = $request->getContent();
     $admin = $serializer->deserialize($jsonRecu,User::class,'json');
